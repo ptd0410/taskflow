@@ -19,7 +19,7 @@
     "dev": "tsup --watch",
     "format": "prettier . --write",
     "check-format": "prettier . --check",
-    "deploy": "git add . && git commit -m \"chore: release\" && npm version patch && npm publish"
+    "deploy": "pnpm build && git add . && git commit -m \"release\" || true && npm version patch --no-git-tag-version && npm publish"
   },
   "devDependencies": {
     "husky": "^9.1.7",
