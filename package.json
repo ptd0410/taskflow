@@ -1,5 +1,5 @@
 {
-  "name": "@dpt/taskflow",
+  "name": "@yudpt/taskflow",
   "type": "module",
   "exports": {
     ".": {
