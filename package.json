@@ -1,5 +1,5 @@
 {
-  "name": "@yudpt/taskflow",
+  "name": "taskflow-kit",
   "type": "module",
   "exports": {
     ".": {
