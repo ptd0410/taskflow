@@ -19,7 +19,7 @@
     "dev": "tsup --watch",
     "format": "prettier . --write",
     "check-format": "prettier . --check",
-    "bump": "npm version patch"
+    "deploy": "npm version patch && npm publish"
   },
   "devDependencies": {
     "husky": "^9.1.7",
@@ -27,6 +27,5 @@
     "prettier": "^3.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0"
-  },
-  "version": "0.0.1"
+  }
 }
