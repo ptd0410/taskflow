@@ -1,5 +1,5 @@
 {
-  "name": "taskflow-kit",
+  "name": "@mtnts/taskflow",
   "type": "module",
   "exports": {
     ".": {
@@ -19,7 +19,7 @@
     "dev": "tsup --watch",
     "format": "prettier . --write",
     "check-format": "prettier . --check",
-    "deploy": "pnpm build && git add . && git commit -m \"release\" || true && npm version patch --no-git-tag-version && npm publish --access public"
+    "release": "pnpm build && npm version patch --no-git-tag-version && npm publish --access public"
   },
   "devDependencies": {
     "husky": "^9.1.7",
@@ -28,5 +28,5 @@
     "tsup": "^8.0.0",
     "typescript": "^5.0.0"
   },
-  "version": "0.0.14"
+  "version": "0.0.18"
 }

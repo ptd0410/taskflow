@@ -64,6 +64,12 @@ export class WorkerQueue {
     this.#drain();
   }
 
+  clear() {
+    while (this.#queue.length) {
+      this.#queue.shift()!.cancel();
+    }
+  }
+
   enqueue<T>(task: Task<T>) {
     let resolveFn!: (value: T) => void;
     let rejectFn!: (reason?: any) => void;
@@ -80,12 +86,19 @@ export class WorkerQueue {
       aborted: false,
 
       cancel: () => {
+        if (item.aborted) return;
+
         item.aborted = true;
-        controller.abort(); // 👈 EMIT ABORT
+
+        controller.abort();
+
+        rejectFn(new Error("aborted"));
       },
 
       run: async () => {
-        if (item.aborted) return;
+        if (item.aborted) {
+          return;
+        }
 
         this.#running++;
         this.#onTaskStart?.(task);
@@ -98,13 +111,17 @@ export class WorkerQueue {
           if (!item.aborted) {
             resolveFn(result);
           }
-
-          this.#onTaskFinish?.(task);
         } catch (err) {
           this.#onError?.(err, task);
-          rejectFn(err);
+
+          if (!item.aborted) {
+            rejectFn(err);
+          }
         } finally {
+          this.#onTaskFinish?.(task);
+
           this.#running--;
+
           this.#drain();
 
           if (this.#running === 0 && this.#queue.length === 0) {
@@ -115,12 +132,13 @@ export class WorkerQueue {
     };
 
     this.#queue.push(item);
+
     this.#drain();
 
     return {
       promise,
       cancel: item.cancel,
-      abort: item.cancel, // alias cho dễ dùng
+      abort: item.cancel,
     };
   }
 
@@ -135,6 +153,7 @@ export class WorkerQueue {
       if (timeout) {
         setTimeout(() => {
           const idx = this.#idleResolvers.indexOf(resolve);
+
           if (idx !== -1) {
             this.#idleResolvers.splice(idx, 1);
             reject(new Error("onIdle timeout"));
@@ -142,6 +161,18 @@ export class WorkerQueue {
         }, timeout);
       }
     });
+  }
+
+  all<T>(tasks: Task<T>[]) {
+    const jobs = tasks.map((task) => this.enqueue(task));
+
+    return {
+      promise: Promise.all(jobs.map((j) => j.promise)),
+
+      abort: () => {
+        jobs.forEach((j) => j.abort());
+      },
+    };
   }
 
   #drain() {
@@ -159,8 +190,8 @@ export class WorkerQueue {
     const resolvers = this.#idleResolvers;
     this.#idleResolvers = [];
 
-    for (const r of resolvers) {
-      r();
+    for (const resolve of resolvers) {
+      resolve();
     }
   }
 }
@@ -168,9 +199,14 @@ export class WorkerQueue {
 export function withAbort<T>(fn: (signal: AbortSignal) => Promise<T>) {
   return ({ signal }: { signal: AbortSignal }) =>
     new Promise<T>((resolve, reject) => {
-      if (signal.aborted) return reject("aborted");
+      if (signal.aborted) {
+        reject(new Error("aborted"));
+        return;
+      }
 
-      const onAbort = () => reject("aborted");
+      const onAbort = () => {
+        reject(new Error("aborted"));
+      };
 
       signal.addEventListener("abort", onAbort);
 
