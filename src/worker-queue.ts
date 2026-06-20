@@ -14,6 +14,8 @@ type WorkerQueueOptions = {
   onTaskFinish?: (task: Task<any>) => void;
 };
 
+export type Batch = { promise: Promise<any>; abort(): void } | null;
+
 export class WorkerQueue {
   #concurrency: number;
   #running = 0;
